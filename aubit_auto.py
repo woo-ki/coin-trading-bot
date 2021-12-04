@@ -1,19 +1,17 @@
 #-*- coding:utf-8 -*-
 
-import time
+# import time
 import pyupbit
 
 access = "9F2w4TJy72xoFimpg9XcPF1byOgk4BPVjYRU2Aeg"          # 본인 값으로 변경
 secret = "BNwix0tO4IPIn4GzWcxqVnRxVxItxJPh4sm3DYj5"          # 본인 값으로 변경
 upbit = pyupbit.Upbit(access, secret)
 
-while True:
-    time.sleep(5)
-    for ticker in pyupbit.get_tickers("KRW"):
-        if ticker == "KRW-HUM":
-            df = pyupbit.get_ohlcv(ticker, "minute5", 1)
-            print(df)
-            break
+for ticker in pyupbit.get_tickers("KRW"):
+    if ticker == "KRW-HUM":
+        df = pyupbit.get_ohlcv(ticker, "minute5", 1)
+        print(df)
+        break
 # target = "KRW-POWR"
 # coin_now_price = pyupbit.get_current_price(target)
 # coin_target_price = coin_now_price * 0.998

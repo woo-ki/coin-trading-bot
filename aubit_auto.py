@@ -1,3 +1,5 @@
+#-*- coding:utf-8 -*-
+
 import time
 import pyupbit
 
@@ -8,8 +10,8 @@ upbit = pyupbit.Upbit(access, secret)
 while True:
     time.sleep(5)
     for ticker in pyupbit.get_tickers("KRW"):
-        if ticker == 'KRW-HUM':
-            df = pyupbit.get_ohlcv(ticker, 'minute5', 1)
+        if ticker == "KRW-HUM":
+            df = pyupbit.get_ohlcv(ticker, "minute5", 1)
             print(df)
             break
 # target = "KRW-POWR"
@@ -24,21 +26,21 @@ while True:
 # my_coins = []
 #
 # for coin in upbit.get_balances():
-#     ticker = coin['currency']
-#     if ticker == 'KRW':
+#     ticker = coin["currency"]
+#     if ticker == "KRW":
 #         continue
 #     temp = {
-#         'currency': 'KRW-' + coin['currency'],
-#         'balance': float(coin['balance']),
-#         'avg_buy_price': float(coin['avg_buy_price']),
-#         'now_price': pyupbit.get_current_price('KRW-' + coin['currency'])
+#         "currency": "KRW-" + coin["currency"],
+#         "balance": float(coin["balance"]),
+#         "avg_buy_price": float(coin["avg_buy_price"]),
+#         "now_price": pyupbit.get_current_price("KRW-" + coin["currency"])
 #     }
-#     temp['revenue'] = (temp['now_price'] - temp['avg_buy_price']) / temp['avg_buy_price'] * 100.0
+#     temp["revenue"] = (temp["now_price"] - temp["avg_buy_price"]) / temp["avg_buy_price"] * 100.0
 #     my_coins.append(temp)
 #
 # print(my_coins)
 # for coin in my_coins:
-#     print(upbit.sell_limit_order(coin['currency'], pyupbit.get_tick_size(coin['avg_buy_price'] * 1.03), 25))
+#     print(upbit.sell_limit_order(coin["currency"], pyupbit.get_tick_size(coin["avg_buy_price"] * 1.03), 25))
 
 
 # coins = pyupbit.get_tickers(fiat="KRW")

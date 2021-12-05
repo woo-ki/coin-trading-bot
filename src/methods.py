@@ -25,7 +25,7 @@ def get_top_coin_list(interval, top):
             # 티커와 거래액을 출력해 봅니다.
             # print(ticker, dic_coin_money[ticker])
             # api 최대 호출 횟수 피하기 위한 시간텀
-            time.sleep(0.05)
+            time.sleep(0.7)
 
         except Exception as e:
             print("exception:", e)

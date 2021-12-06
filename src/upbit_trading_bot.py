@@ -127,6 +127,7 @@ while True:
                             budget_for_buy_once = math.floor(now_my_balance / (1 + buy_fees))       # 1회 매수 금액 = 수수료 공제 포함 현재 잔고 전액
                     buy_result = upbit.buy_market_order(target_coin, budget_for_buy_once)
                     methods.log_print("매수 성공: " + str(buy_result["price"]))
+                    time.sleep(1)
                 else:
                     methods.log_print("잔액부족 매수실패")
             else:

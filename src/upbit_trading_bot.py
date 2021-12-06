@@ -28,7 +28,7 @@ while True:
 
     # 투자대상 선정(1시간봉 기준 2개의 거래량 1등)
     methods.log_print("투자 대상 선정 시작")
-    target_coins = methods.get_top_coin_list("minute60", 5)
+    target_coins = methods.get_top_coin_list("minute60", 10)
     target_coins_str = ""
     for target in target_coins:
         if target_coins_str == "":

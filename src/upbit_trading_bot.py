@@ -12,7 +12,7 @@ upbit = pyupbit.Upbit(access, secret)
 
 
 while True:
-    methods.log_print("투자 봇 가동")
+    # methods.log_print("투자 봇 가동")
     # 내 원화 잔고를 가져온다
     my_balance = int(upbit.get_balance("KRW"))
 
@@ -26,10 +26,10 @@ while True:
         else:                                       # 투자원금이 최소 투자금보다 큰경우
             invest_balance = invest_min             # 투자금 = 최소 투자금
     now_balance = invest_balance
-    methods.log_print("투자금 지정 완료: " + str(invest_balance) + "원")
+    # methods.log_print("투자금 지정 완료: " + str(invest_balance) + "원")
 
     # 투자대상 선정(1시간봉 기준 2개의 거래량 상위 or 보유코인)
-    methods.log_print("거래 대상 선정 시작")
+    # methods.log_print("거래 대상 선정 시작")
 
     # 내 보유 코인을 가져온다
     my_coins = methods.get_my_coins(upbit)
@@ -55,7 +55,7 @@ while True:
             target_coins_str += str(target)
         else:
             target_coins_str += (", " + str(target))
-    methods.log_print("거래 대상 목록 선정 완료: " + target_coins_str)
+    # methods.log_print("거래 대상 목록 선정 완료: " + target_coins_str)
 
     # 매도신호가 들어온 경우
     if sell_sign:
@@ -78,33 +78,33 @@ while True:
         buy_sign = True
 
     # 매수 신호가 들어온 경우
-    if buy_sign:
+    # if buy_sign:
         # 이미 구매한 코인이 있는경우
-        if sell_sign:
+        # if sell_sign:
             # 매수로직을 진행한다.
             # 매수로직에는 매도로직이 함께한다
             # 매수간 텀은 최소 5분이상 둔다.
             # 매수로직은 대상체크 메소드와 구매 메소드 2개로 이루어진다.
             # 보유한 코인을 모두 다 판매한 경우 매수로직이 종료된다.
-            methods.log_print("매수로직 짜야함")
+            # methods.log_print("매수로직 짜야함")
 
             # 보유한 코인을 모두 판매하고 나온경우
-            methods.log_print("보유한 코인을 모두 판매하였습니다. 봇을 다시 실행합니다.")
+            # methods.log_print("보유한 코인을 모두 판매하였습니다. 봇을 다시 실행합니다.")
         # 구매한 코인이 없는경우
-        else:
+        # else:
             # 거래 대상들을 돌면서 구매할만한 코인이 있는지 확인한다.
-            for target_coin in target_coins:
+            # for target_coin in target_coins:
                 # 구매대상 있는지 검사 로직
-                purchase_check = methods.check_purchase_target()
+                # purchase_check = methods.check_purchase_target()
                 # 구매대상에 해당하는 경우
-                if purchase_check:
+                # if purchase_check:
                     # 해당 코인을 루프돌며 거래하는 로직으로 들어간다
-                    methods.print('매수로직 짜야행')
+                    # methods.print('매수로직 짜야행')
                 # 구매대상에 해당하지 않는 경우
-                else:
-                    continue
+                # else:
+                #     continue
             # 루프를 다 돌았으나 구매대상이 없는경우 => 다시 최초 로직으로
-            methods.log_print("구매에 적합한 대상이 없습니다. 봇을 다시 실행합니다.")
+            # methods.log_print("구매에 적합한 대상이 없습니다. 봇을 다시 실행합니다.")
 
         # ------------------------------------------------------------------ 아래 참조해서 매수로직 다시짜자
 

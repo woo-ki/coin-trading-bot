@@ -30,7 +30,7 @@ def get_top_coin_list(interval, top):
     # for문을 돌면서 모든 코인들을 순회합니다.
     for ticker in tickers:
         if ticker["market_warning"] != "NONE":
-            log_print(ticker["market"] + "은 정상적인 상태가 아닙니다 목록에서 제외합니다.")
+            # log_print(ticker["market"] + "은 정상적인 상태가 아닙니다 목록에서 제외합니다.")
             continue
         try:
             # 캔들 정보를 가져온다.
@@ -45,7 +45,7 @@ def get_top_coin_list(interval, top):
             delay_for_normal_api()
 
         except Exception as e:
-            print("exception:", e)
+            log_print(e)
 
     # 딕셔너리를 값으로 정렬하되 숫자가 큰 순서대로 정렬합니다.
     dic_sorted_coin_money = sorted(dic_coin_money.items(), key=lambda x: x[1], reverse=True)
@@ -135,8 +135,8 @@ def select_revenue_rate(market_status):
 # invest_balance : 투자 원금
 # now_balance : 투자금 잔액
 def sell_logic(upbit, target_coin, invest_balance, now_balance):
-    log_print("매도로직을 시작합니다.")
-    log_print("거래 대상: " + str(target_coin))
+    # log_print("매도로직을 시작합니다.")
+    # log_print("거래 대상: " + str(target_coin))
 
     # 시장상황 분석
     market_status = check_market_status(target_coin)
@@ -144,7 +144,7 @@ def sell_logic(upbit, target_coin, invest_balance, now_balance):
     # 목표 수익율 설정
     target_revenue = select_revenue_rate(market_status)
 
-    log_print("시장 상황: " + market_status + ", 목표 수익율: " + str(round((target_revenue - 1.0) * 100, 1)) + '%')
+    # log_print("시장 상황: " + market_status + ", 목표 수익율: " + str(round((target_revenue - 1.0) * 100, 1)) + '%')
 
     # 내가 보유한 코인중 타겟 코인의 정보를 가져온다.
     my_coin = ""
@@ -166,11 +166,11 @@ def sell_logic(upbit, target_coin, invest_balance, now_balance):
     now_price = pyupbit.get_current_price(target_coin)
     if now_price >= target_price:
         upbit.sell_market_order(target_coin, float(my_coin["balance"]))
-        log_print("코인을 모두 판매했습니다.")
+        log_print(str(target_coin) + " 코인을 모두 판매했습니다.")
         delay_for_normal_api()
         return True
     else:
-        log_print("수익률에 도달하지 못했습니다.")
+        # log_print("수익률에 도달하지 못했습니다.")
         delay_for_normal_api()
         return False
 

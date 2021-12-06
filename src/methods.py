@@ -79,3 +79,11 @@ def is_has_coin(balances, ticker):
         if ticker == real_ticker:
             has_coin = True
     return has_coin
+
+
+# 프린트 메소드
+def log_print(message):
+    now = time.localtime()
+    now = "[%04d/%02d/%02d %02d:%02d:%02d]" % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+    print(now, message)
+

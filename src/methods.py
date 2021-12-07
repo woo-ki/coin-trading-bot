@@ -359,7 +359,7 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
     # 보유코인 판매모드인 경우
     if init_purchase:
         # 대상 코인을 바로 시장가 매수한다.
-        buy_target_coin(target_coin)
+        buy_target_coin(upbit, target_coin, invest_balance, except_balance)
         # 코인 구매 시간을 저장한다
         buy_time = time.time()
 

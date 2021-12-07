@@ -16,6 +16,11 @@ def delay_for_normal_api():
     time.sleep(0.07)
 
 
+# 거래 api 호출 시간지연 메소드
+def delay_for_exchange_api():
+    time.sleep(3)
+
+
 # 거래대금이 많은 순으로 코인 리스트를 얻는다.
 # interval : Interval 기간(day/minute1/minute3/minute5/minute10/minute15/minute30/minute60/minute240/week/month)
 # top : 상위 몇개를 확인할것인지 지정
@@ -167,7 +172,7 @@ def sell_logic(upbit, target_coin, invest_balance, now_balance):
     if now_price >= target_price:
         upbit.sell_market_order(target_coin, float(my_coin["balance"]))
         log_print(str(target_coin) + " 코인을 모두 판매했습니다.")
-        delay_for_normal_api()
+        delay_for_exchange_api()
         return True
     else:
         # log_print("수익률에 도달하지 못했습니다.")
@@ -176,7 +181,18 @@ def sell_logic(upbit, target_coin, invest_balance, now_balance):
 
 
 # 매수 대상인지 체크하는 메소드
-def check_purchase_target():
+# target_coin : 대상 코인 티커
+# interval : 봉 기준시간(minute5, minute60, etc...)
+def check_purchase_target(target_coin, interval):
+    df = pyupbit.get_ohlcv(target_coin, interval)   # 기준 봉 시간
+    delay_for_normal_api()
+
+    # 지표기준들/ rsi, ma, 볼린저밴드, 이동성돌파등 True, False로 구분
+
+    # 기준봉 2개의 rsi 지표를 구한다
+    rsi_14_comparison = get_rsi(df, 14, -2)         # 직전 봉 rsi14
+    rsi_14_now = get_rsi(df, 14, -1)                # 현재 봉 rsi14
+    # rsi
     # 로직 고도화 시켜야함
     is_purchase_target = False
     # 매수 대상이 맞다면

@@ -322,10 +322,10 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance):
             # 1회 매수를 한 이후 잔액이 최소 주문금액보다 작은경우
             if now_my_balance - (budget_for_buy_once * (1 + buy_fees)) < min_buy_price:
                 budget_for_buy_once = math.floor(now_my_balance / (1 + buy_fees))       # 1회 매수 금액 = 수수료 공제 포함 현재 잔고 전액
-        upbit.buy_market_order(target_coin, budget_for_buy_once)
+        buy_result = upbit.buy_market_order(target_coin, budget_for_buy_once)
+        log_print(str(target_coin) + " 매수 성공: " + str(buy_result["price"]) + "원")
         delay_for_exchange_api()
         return True
-        # log_print("매수 성공: " + str(buy_result["price"]))
     else:
         # 리얼객단가 가져오기
         real_avg_buy_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)

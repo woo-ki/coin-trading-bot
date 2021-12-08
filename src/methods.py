@@ -406,11 +406,11 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
         purchase_level = len(check_result)
         buy_sign = False
         if purchase_level == 4:
-            buy_minute = 5
+            buy_minute = 3
         elif purchase_level == 3:
-            buy_minute = 10
+            buy_minute = 6
         else:
-            buy_minute = 15
+            buy_minute = 9
         buy_term = 60 * buy_minute
 
         # 매수 신호가 2개이상 충족하는가

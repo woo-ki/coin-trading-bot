@@ -44,7 +44,7 @@ while True:
     # 보유 코인이 없는경우
     else:
         # 거래량 상위 코인 목록을 가져온다
-        target_coins = methods.get_top_coin_list("minute60", 10)
+        target_coins = methods.get_top_coin_list("minute60", 5)
     # 거래대상 코인 목록을 출력한다
     target_coins_str = ""
     for target in target_coins:

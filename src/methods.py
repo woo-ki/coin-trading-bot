@@ -13,13 +13,18 @@ def log_print(message):
     print(now, message)
 
 
-# 일반 api 호출 시간지연 메소드
+# 계좌 관련 api 호출 시간지연 메소드
+def delay_for_exchange_api():
+    time.sleep(0.1)
+
+
+# 종목, 캔들등 api 호출 시간지연 메소드
 def delay_for_normal_api():
-    time.sleep(0.07)
+    time.sleep(0.11)
 
 
 # 거래 api 호출 시간지연 메소드
-def delay_for_exchange_api():
+def delay_for_deal_api():
     time.sleep(3)
 
 
@@ -53,6 +58,7 @@ def get_top_coin_list(interval, top):
 
         except Exception as e:
             log_print(e)
+            get_top_coin_list(interval, top)
 
     # 딕셔너리를 값으로 정렬하되 숫자가 큰 순서대로 정렬합니다.
     dic_sorted_coin_money = sorted(dic_coin_money.items(), key=lambda x: x[1], reverse=True)
@@ -129,7 +135,7 @@ def get_ma(ohlcv, period, st):
 # 내가 소유한 코인 목록을 받아오는 메소드
 def get_my_coins(upbit):
     balances = upbit.get_balances()
-    delay_for_normal_api()
+    delay_for_exchange_api()
     my_coins = list()
     for balance in balances:
         if balance["currency"] == "KRW" or float(balance["avg_buy_price"]) == float(0):
@@ -176,10 +182,14 @@ def select_revenue_rate(market_status):
 def get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance):
     # 내가 보유한 코인중 타겟 코인의 정보를 가져온다.
     my_coin = ""
-    for balance in upbit.get_balances():
-        if "KRW-" + balance["currency"] == target_coin:
-            my_coin = balance
-    delay_for_normal_api()
+    try:
+        for balance in upbit.get_balances():
+            if "KRW-" + balance["currency"] == target_coin:
+                my_coin = balance
+        delay_for_exchange_api()
+    except Exception as e:
+        log_print(e)
+        get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
 
     # 내 코인의 평균 객단가(업비트 표기)
     upbit_avg_buy_price = float(my_coin["avg_buy_price"])
@@ -187,7 +197,7 @@ def get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance):
     # 내 코인의 평균 객단가(거래에 사용한 금액기준 표기)
     # 현재 원화 잔고를 받아와서 거래가능 금액을 계산한다. (현재 잔고 - 투자 예외 잔고)
     now_balance = int(upbit.get_balance("KRW")) - except_balance
-    delay_for_normal_api()
+    delay_for_exchange_api()
     # 코인 투자금액(투자원금 - 현재잔고)
     used_money = invest_balance - now_balance
     # 투자금 기준 평단가를 계산한다. 코인 투자금액 / 코인 갯수
@@ -229,7 +239,7 @@ def sell_logic(upbit, target_coin, invest_balance, except_balance):
     if now_price >= target_price:
         upbit.sell_market_order(target_coin, upbit.get_balance(target_coin))
         log_print(str(target_coin) + " 코인을 모두 판매했습니다.")
-        delay_for_exchange_api()
+        delay_for_deal_api()
         return True
     else:
         # log_print("수익률에 도달하지 못했습니다.")
@@ -352,7 +362,7 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
                     buy_standard += ", 변동성 돌파"
         log_print("매수 전략: " + buy_standard)
         log_print(str(target_coin) + " 매수 성공: " + str(buy_result["price"]) + "원")
-        delay_for_exchange_api()
+        delay_for_deal_api()
         return True
     else:
         # 리얼객단가 가져오기
@@ -366,7 +376,7 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
             # 보유 코인의 25% 손절
             upbit.sell_market_order(target_coin, upbit.get_balance(target_coin) * 0.25)
             log_print(str(target_coin) + " 코인을 25% 손절했습니다")
-            delay_for_exchange_api()
+            delay_for_deal_api()
 
             # 매수 메소드를 다시 실행한다
             buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)

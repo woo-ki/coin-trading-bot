@@ -371,6 +371,7 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
             # 매수 메소드를 다시 실행한다
             buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
         else:
+            log_print("손절라인에 도달하지 못해서 패스 " + str((real_avg_buy_price - now_coin_price) / real_avg_buy_price))
             return False
 
 

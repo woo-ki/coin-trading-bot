@@ -53,6 +53,7 @@ while True:
             balances["KRW-" + balance["currency"]] = temp
         for target_coin in target_coins:
             invest_balance += int(float(balances[target_coin]["balance"]) * float(balances[target_coin]["avg_buy_price"]))
+        methods.log_print("보유 코인이 있습니다. 투자원금을 조정합니다: " + str(invest_balance) + "원")
         # 매도신호 on
         sell_sign = True
     # 보유 코인이 없는경우

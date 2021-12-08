@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import time
 import pyupbit
 import methods
 
@@ -107,7 +108,12 @@ while True:
                 purchase_level = len(check_result)
                 # 구매대상에 해당하는 경우
                 if purchase_level >= 2:
+                    # 매수로직 진입시간을 저장한다
+                    buy_logic_start = time.time()
                     # 매수로직을 진행한다.
                     methods.buy_logic(upbit, target_coin, "minute5", invest_balance, except_balance, True, check_result)
+                    # 매수로직이 종료된 시간이 최초 진입시간보다 5분 이상 경과했으면 봇을 다시 실행한다.
+                    if time.time() - buy_logic_start >= 300:
+                        break
             # 구매대상이 없거나 매수로직이 모두 끝난경우
             # methods.log_print("거래가 종료되었습니다. 봇을 다시 실행합니다.")

@@ -40,6 +40,18 @@ while True:
     if len(my_coins) > 0:
         # 거래대상 코인 = 보유 코인
         target_coins = my_coins
+        # 투자금에 코인을 구매하는데 사용한 비용을 더해준다. (정확한 평단가 관리 목적)
+        balances = dict()
+        for balance in upbit.get_balances():
+            if balance["currency"] == "KRW":
+                continue
+            temp = {
+                "balance": balance["balance"],
+                "avg_buy_price": balance["avg_buy_price"]
+            }
+            balances["KRW-" + balance["currency"]] = temp
+        for target_coin in target_coins:
+            invest_balance += int(float(balances[target_coin]["balance"]) * float(balances[target_coin]["avg_buy_price"]))
         # 매도신호 on
         sell_sign = True
     # 보유 코인이 없는경우

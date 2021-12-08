@@ -309,7 +309,7 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
     buy_fees = float(target_info["bid_fee"])        # 투자 코인 매수 수수료
 
     # 1회당 매수금액 설정
-    budget_for_buy_once = invest_balance * 0.1                                          # 1회 매수 금액
+    budget_for_buy_once = invest_balance * 0.05                                         # 1회 매수 금액
     now_my_balance = int(upbit.get_balance("KRW")) - except_balance                     # 현재 잔고
     min_buy_price = float(target_info["market"]["bid"]["min_total"])                    # 최소 매수 금액
 

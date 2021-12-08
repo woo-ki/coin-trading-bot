@@ -90,10 +90,11 @@ while True:
             # 거래 대상들을 돌면서 구매할만한 코인이 있는지 확인한다.
             for target_coin in target_coins:
                 # 구매대상 있는지 검사 로직
-                purchase_level = methods.check_purchase_target(target_coin, "minute5")
+                check_result = dict(filter(lambda el: el[1] is True, methods.check_purchase_target(target_coin, "minute5").items()))
+                purchase_level = len(check_result)
                 # 구매대상에 해당하는 경우
                 if purchase_level >= 2:
                     # 매수로직을 진행한다.
-                    methods.buy_logic(upbit, target_coin, "minute5", invest_balance, except_balance, True)
+                    methods.buy_logic(upbit, target_coin, "minute5", invest_balance, except_balance, True, check_result)
             # 구매대상이 없거나 매수로직이 모두 끝난경우
             # methods.log_print("거래가 종료되었습니다. 봇을 다시 실행합니다.")

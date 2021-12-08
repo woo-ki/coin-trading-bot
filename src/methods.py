@@ -287,10 +287,13 @@ def check_purchase_target(target_coin, interval):
     if now_price > (last_max - last_min) * 0.5 + now_open:
         vb_passed = True
 
-    # 통과한 케이스가 몇건인지 체크한다
-    purchase_level = rsi_passed + ma_passed + bb_passed + vb_passed
-
-    return purchase_level
+    # 결과값 딕셔너리를 반환해준다
+    return {
+        "rsi": rsi_passed,
+        "ma": ma_passed,
+        "bb": bb_passed,
+        "vb": vb_passed
+    }
 
 
 # 대상코인 매수 함수
@@ -298,7 +301,8 @@ def check_purchase_target(target_coin, interval):
 # target_coin : 매도할 코인 티커
 # invest_balance : 투자 원금
 # except_balance : 투자예외 지정금
-def buy_target_coin(upbit, target_coin, invest_balance, except_balance):
+# check_result : 어떤 매수로직이 참인지 담고있는 딕셔너리
+def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result):
     # 투자 대상 거래 수수료
     target_info = upbit.get_chance(target_coin)     # 투자 코인 시장정보
     delay_for_exchange_api()
@@ -322,7 +326,31 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance):
             # 1회 매수를 한 이후 잔액이 최소 주문금액보다 작은경우
             if now_my_balance - (budget_for_buy_once * (1 + buy_fees)) < min_buy_price:
                 budget_for_buy_once = math.floor(now_my_balance / (1 + buy_fees))       # 1회 매수 금액 = 수수료 공제 포함 현재 잔고 전액
+        # 매수 실행
         buy_result = upbit.buy_market_order(target_coin, budget_for_buy_once)
+
+        # 매수 전략 문자열 만들기
+        buy_standard = ""
+        for key in check_result:
+            if buy_standard == "":
+                if key == "rsi":
+                    buy_standard += "rsi 상승"
+                elif key == "ma":
+                    buy_standard += "ma 골든크로스"
+                elif key == "bb":
+                    buy_standard += "볼린저 밴드 표준범위"
+                elif key == "vb":
+                    buy_standard += "변동성 돌파"
+            else:
+                if key == "rsi":
+                    buy_standard += ", rsi 상승"
+                elif key == "ma":
+                    buy_standard += ", ma 골든크로스"
+                elif key == "bb":
+                    buy_standard += ", 볼린저 밴드 표준범위"
+                elif key == "vb":
+                    buy_standard += ", 변동성 돌파"
+        log_print("매수 전략: " + buy_standard)
         log_print(str(target_coin) + " 매수 성공: " + str(buy_result["price"]) + "원")
         delay_for_exchange_api()
         return True
@@ -341,7 +369,7 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance):
             delay_for_exchange_api()
 
             # 매수 메소드를 다시 실행한다
-            buy_target_coin(upbit, target_coin, invest_balance, except_balance)
+            buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
         else:
             return False
 
@@ -353,13 +381,14 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance):
 # invest_balance : 투자 원금
 # except_balance : 투자예외 지정금
 # init_purchase : 진입과 동시에 코인을 구매할지 여부
-def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init_purchase=False):
+# check_result : init_purchase가 True인 경우 어떤 체크값들이 True인지 담고있는 딕셔너리
+def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init_purchase=False, check_result=""):
     # 매수 시간텀 메모를 위해 buy_time 변수를 선언한다
     buy_time = ""
     # 보유코인 판매모드인 경우
     if init_purchase:
         # 대상 코인을 바로 시장가 매수한다.
-        buy_target_coin(upbit, target_coin, invest_balance, except_balance)
+        buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
         # 코인 구매 시간을 저장한다
         buy_time = time.time()
 
@@ -373,7 +402,8 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
             break
 
         # 매수 대상인지 체크에 필요한 변수 선언 및 값 지정
-        purchase_level = check_purchase_target(target_coin, interval)
+        check_result = dict(filter(lambda el: el[1] is True, check_purchase_target(target_coin, interval).items()))
+        purchase_level = len(check_result)
         buy_sign = False
         if purchase_level == 4:
             buy_minute = 5
@@ -395,7 +425,7 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
         # 매수 신호가 전달되는 경우
         if buy_sign:
             # 대상 코인을 바로 시장가 매수한다.
-            buy_result = buy_target_coin(upbit, target_coin, invest_balance, except_balance)
+            buy_result = buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
             # 정상적으로 구매를 한경우
             if buy_result:
                 # 코인 구매 시간을 저장한다

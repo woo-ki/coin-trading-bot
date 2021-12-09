@@ -377,8 +377,8 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
         now_coin_price = pyupbit.get_current_price(target_coin)
         delay_for_normal_api()
 
-        # 현재 코인 가격이 실제 객단가보다 3% 이상 낮은경우
-        if (real_avg_buy_price - now_coin_price) / real_avg_buy_price > 0.03:
+        # 현재 코인 가격이 실제 객단가보다 1% 이상 낮은경우
+        if (real_avg_buy_price - now_coin_price) / real_avg_buy_price > 0.01:
             # 보유 코인의 25% 손절
             upbit.sell_market_order(target_coin, upbit.get_balance(target_coin) * 0.25)
             log_print(str(target_coin) + " 코인을 25% 손절했습니다")
@@ -431,12 +431,16 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
 
         # 매수 신호가 2개이상 충족하는가
         if purchase_level >= 2:
-            # 구매한 이력이 없는가
-            if buy_time == "":
-                buy_sign = True
-            # 구매까지의 충분한 시간이 경과했는가
-            elif time.time() - buy_time >= buy_term:
-                buy_sign = True
+            # 수익율이 0.2% 미만이 맞는가 0.2프로 미만인 경우에만 매수진행
+            target_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance) * 1.002
+            now_price = pyupbit.get_current_price(target_coin)
+            if now_price < target_price:
+                # 구매한 이력이 없는가
+                if buy_time == "":
+                    buy_sign = True
+                # 구매까지의 충분한 시간이 경과했는가
+                elif time.time() - buy_time >= buy_term:
+                    buy_sign = True
 
         # 매수 신호가 전달되는 경우
         if buy_sign:

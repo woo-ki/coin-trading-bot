@@ -53,7 +53,6 @@ while True:
             balances["KRW-" + balance["currency"]] = temp
         for target_coin in target_coins:
             invest_balance += int(float(balances[target_coin]["balance"]) * float(balances[target_coin]["avg_buy_price"]))
-        methods.log_print("보유 코인이 있습니다. 투자원금을 조정합니다: " + str(invest_balance) + "원")
         # 매도신호 on
         sell_sign = True
     # 보유 코인이 없는경우
@@ -95,6 +94,9 @@ while True:
         if sell_sign:
             # 타겟 코인들을 루프 돌면서
             for target_coin in target_coins:
+                methods.log_print("매수 로직을 시작합니다.")
+                methods.log_print("거래 대상: " + target_coin)
+                methods.log_print("투자 금액: " + str(invest_balance) + "원")
                 # 매수로직을 진행한다.
                 methods.buy_logic(upbit, target_coin, "minute5", invest_balance, except_balance)
 
@@ -109,6 +111,9 @@ while True:
                 purchase_level = len(check_result)
                 # 구매대상에 해당하는 경우
                 if purchase_level >= 2:
+                    methods.log_print("매수 로직을 시작합니다.")
+                    methods.log_print("거래 대상: " + target_coin)
+                    methods.log_print("투자 금액: " + str(invest_balance) + "원")
                     # 매수로직 진입시간을 저장한다
                     buy_logic_start = time.time()
                     # 매수로직을 진행한다.

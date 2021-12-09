@@ -442,7 +442,7 @@ def good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance):
     # 내 코인의 평균 객단가(업비트 표기)
     upbit_avg_buy_price = check_my_upbit_avg_price(upbit, target_coin)
     # 조건2 나의 업비트 평단가보다 1% 더 높거나
-    is_grow_then_upbit_avg1 = now_price - upbit_avg_buy_price > 0.01
+    is_grow_then_upbit_avg1 = now_price > upbit_avg_buy_price * 1.01
     delay_for_normal_api()
     # 실제 평단가
     real_avg = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
@@ -457,6 +457,8 @@ def good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance):
             log_print(str(target_coin) + " 코인을 50% 판매했습니다.")
             delay_for_deal_api()
             return True
+        else:
+            return False
     # 익절 대상이 아니라면
     else:
         # 추가로 매수할 자금은 남아있는지 체크

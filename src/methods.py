@@ -196,7 +196,11 @@ def get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance):
 
     # 내 코인의 평균 객단가(거래에 사용한 금액기준 표기)
     # 현재 원화 잔고를 받아와서 거래가능 금액을 계산한다. (현재 잔고 - 투자 예외 잔고)
-    now_balance = int(upbit.get_balance("KRW")) - except_balance
+    try:
+        now_balance = int(upbit.get_balance("KRW")) - except_balance
+    except Exception as e:
+        log_print(e)
+        get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
     delay_for_exchange_api()
     # 코인 투자금액(투자원금 - 현재잔고)
     used_money = invest_balance - now_balance
@@ -320,7 +324,11 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
 
     # 1회당 매수금액 설정
     budget_for_buy_once = invest_balance * 0.05                                         # 1회 매수 금액
-    now_my_balance = int(upbit.get_balance("KRW")) - except_balance                     # 현재 잔고
+    try:
+        now_my_balance = int(upbit.get_balance("KRW")) - except_balance                     # 현재 잔고
+    except Exception as e:
+        log_print(e)
+        buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
     min_buy_price = float(target_info["market"]["bid"]["min_total"])                    # 최소 매수 금액
 
     # 현재 잔고가 최소주문금액 이상인 경우에만 매수 로직 실행

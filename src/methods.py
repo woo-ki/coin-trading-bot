@@ -13,14 +13,9 @@ def log_print(message):
     print(now, message)
 
 
-# 계좌 관련 api 호출 시간지연 메소드
-def delay_for_exchange_api():
-    time.sleep(0.1)
-
-
 # 종목, 캔들등 api 호출 시간지연 메소드
 def delay_for_normal_api():
-    time.sleep(0.11)
+    time.sleep(1)
 
 
 # 거래 api 호출 시간지연 메소드
@@ -54,7 +49,7 @@ def get_top_coin_list(interval, top):
             # 티커와 거래액을 출력해 봅니다.
             # print(ticker["market"], dic_coin_money[ticker["market"]])
             # api 최대 호출 횟수 피하기 위한 시간텀
-            delay_for_normal_api()
+            time.sleep(0.1)
 
         except Exception as e:
             log_print(e)
@@ -135,7 +130,7 @@ def get_ma(ohlcv, period, st):
 # 내가 소유한 코인 목록을 받아오는 메소드
 def get_my_coins(upbit):
     balances = upbit.get_balances()
-    delay_for_exchange_api()
+    delay_for_normal_api()
     my_coins = list()
     for balance in balances:
         if balance["currency"] == "KRW" or float(balance["avg_buy_price"]) == float(0):
@@ -186,7 +181,7 @@ def get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance):
         for balance in upbit.get_balances():
             if "KRW-" + balance["currency"] == target_coin:
                 my_coin = balance
-        delay_for_exchange_api()
+        delay_for_normal_api()
     except Exception as e:
         log_print(e)
         get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
@@ -201,7 +196,7 @@ def get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance):
     except Exception as e:
         log_print(e)
         get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
-    delay_for_exchange_api()
+    delay_for_normal_api()
     # 코인 투자금액(투자원금 - 현재잔고)
     used_money = invest_balance - now_balance
     # 투자금 기준 평단가를 계산한다. 코인 투자금액 / 코인 갯수
@@ -322,7 +317,7 @@ def check_purchase_target(target_coin, interval):
 def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result):
     # 투자 대상 거래 수수료
     target_info = upbit.get_chance(target_coin)     # 투자 코인 시장정보
-    delay_for_exchange_api()
+    delay_for_normal_api()
     buy_fees = float(target_info["bid_fee"])        # 투자 코인 매수 수수료
 
     # 1회당 매수금액 설정

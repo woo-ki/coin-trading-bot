@@ -234,7 +234,7 @@ def sell_logic(upbit, target_coin, invest_balance, except_balance):
     target_revenue = select_revenue_rate(market_status)
 
     # 임시 목표 수익율 재지정
-    target_revenue = 0.007
+    target_revenue = 1.007
 
     # log_print("시장 상황: " + market_status + ", 목표 수익율: " + str(round((target_revenue - 1.0) * 100, 1)) + '%')
 

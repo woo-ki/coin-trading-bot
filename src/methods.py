@@ -323,7 +323,7 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
     buy_fees = float(target_info["bid_fee"])        # 투자 코인 매수 수수료
 
     # 1회당 매수금액 설정
-    budget_for_buy_once = invest_balance * 0.05                                         # 1회 매수 금액
+    budget_for_buy_once = invest_balance * 0.075                                         # 1회 매수 금액
     try:
         now_my_balance = int(upbit.get_balance("KRW")) - except_balance                     # 현재 잔고
     except Exception as e:
@@ -431,7 +431,7 @@ def check_cycle_mode(upbit, target_coin, invest_balance, except_balance):
 
 
 # 순환매 익절 실행
-def good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance):
+def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except_balance):
     # 순환매 익절 대상 체크
     now_price = pyupbit.get_current_price(target_coin)
     delay_for_normal_api()
@@ -441,20 +441,37 @@ def good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance):
     is_volume_passed = now_price * my_coin_cnt / invest_balance > 0.5
     # 내 코인의 평균 객단가(업비트 표기)
     upbit_avg_buy_price = check_my_upbit_avg_price(upbit, target_coin)
-    # 조건2 나의 업비트 평단가보다 1% 더 높거나
-    is_grow_then_upbit_avg1 = now_price > upbit_avg_buy_price * 1.01
+    # 조건2 나의 업비트 평단가보다 현재가가 높아지는 순간
+    is_grow_then_upbit_avg = now_price >= upbit_avg_buy_price
     delay_for_normal_api()
     # 실제 평단가
     real_avg = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
-    # 조건3 지금 가격이 업비트 평단 대비 실제평단가 - 업비트평단의 50퍼센트 수준이상 오른경우
-    is_grow_then_upbit_avg2 = now_price > (real_avg - upbit_avg_buy_price) * 0.5 + upbit_avg_buy_price
+
+    # 직전 볼린저밴드와 지금 볼린저밴드를 구해온다
+    df = pyupbit.get_ohlcv(target_coin, interval)
+    bb_before = get_bb(df, 20, -2)
+    bb_now = get_bb(df, 20, -1)
+
+    # 직전 코인 종가를 구해온다
+    before_price = df["close"][-1]
+
+    # 조건3 볼린저밴드가 미들라인 아래에 있다가 미들라인에 도달한 경우
+    is_bb_grow_passed = float(bb_before["ma"]) - before_price > 0 and float(bb_now["ma"]) - now_price  < 0
+
     #  조건1을 충족
     if is_volume_passed:
-        # 조건2 또는 조건3을 충족
-        if is_grow_then_upbit_avg1 or is_grow_then_upbit_avg2:
+        # 조건2 충족
+        if is_grow_then_upbit_avg:
             # 보유 수량의 50퍼센트를 판매한다
             upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.5)
             log_print(str(target_coin) + " 코인을 50% 판매했습니다.")
+            delay_for_deal_api()
+            return True
+        # 조건3 충족
+        elif is_bb_grow_passed:
+            # 보유 수량의 25퍼센트를 판매한다
+            upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.25)
+            log_print(str(target_coin) + " 코인을 25% 판매했습니다.")
             delay_for_deal_api()
             return True
         else:
@@ -473,7 +490,7 @@ def good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance):
         if now_balance < min_buy_price + min_buy_price * buy_fees:
             # 5초 단위로 순환매 가능대상 체크
             time.sleep(5)
-            good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance)
+            good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except_balance)
         # 잔액이 남아있다면
         else:
             # 매수위해 순환매 익절로직 종료
@@ -506,12 +523,12 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
         # 매수 시작한지 180분이 경과하지 않았을 때 / 0.7% 익절
         if now_time - buy_logic_start < 10800:
             sell_result = sell_logic(upbit, target_coin, invest_balance, except_balance, 1.007)
-        # 매수 시작한지 180분 경과 360분 경과 전 / 0.3% 익절
+        # 매수 시작한지 180분 경과 360분 경과 전 / 0.5% 익절
         elif 10800 <= now_time - buy_logic_start < 21600:
-            sell_result = sell_logic(upbit, target_coin, invest_balance, except_balance, 1.003)
-        # 매수 시작 후 360분 이상 경과 / 3% 까지는 손절
+            sell_result = sell_logic(upbit, target_coin, invest_balance, except_balance, 1.005)
+        # 매수 시작 후 360분 이상 경과 / 0.2% 까지 익절
         else:
-            sell_result = sell_logic(upbit, target_coin, invest_balance, except_balance, 0.97)
+            sell_result = sell_logic(upbit, target_coin, invest_balance, except_balance, 1.002)
 
         # 매도에 성공한 경우
         if sell_result:
@@ -524,7 +541,7 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
         # 순환매 모드에 진입했다면
         if is_cycle_mode:
             # 순환매 진행
-            good_sell_at_cycle_mode(upbit, target_coin, invest_balance, except_balance)
+            good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except_balance)
 
         # 매수 대상인지 체크에 필요한 변수 선언 및 값 지정
         check_result = dict(filter(lambda el: el[1] is True, check_purchase_target(target_coin, interval).items()))

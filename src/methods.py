@@ -464,14 +464,14 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
         if is_grow_then_upbit_avg:
             # 보유 수량의 50퍼센트를 판매한다
             upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.5)
-            log_print(str(target_coin) + " 코인을 50% 판매했습니다.")
+            log_print("순환매 업비트 평단 기준 익절 실행: " + str(target_coin) + " 코인을 50% 판매했습니다.")
             delay_for_deal_api()
             return True
         # 조건3 충족
         elif is_bb_grow_passed:
             # 보유 수량의 25퍼센트를 판매한다
             upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.25)
-            log_print(str(target_coin) + " 코인을 25% 판매했습니다.")
+            log_print("순환매 볼린저밴드 기준 익절 실행: " + str(target_coin) + " 코인을 25% 판매했습니다.")
             delay_for_deal_api()
             return True
         else:

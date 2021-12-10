@@ -106,6 +106,15 @@ while True:
         else:
             # 거래 대상들을 돌면서 구매할만한 코인이 있는지 확인한다.
             for target_coin in target_coins:
+                # 최근 급등한 코인인지 체크
+                df_day = pyupbit.get_ohlcv(target_coin, "day")
+                methods.delay_for_normal_api()
+                df_close_total = 0.0
+                for i in range(-1, -6, -1):
+                    df_close_total += df_day["close"][i]
+                # 만약 어제 또는 이틀전에 5일 평균보다 10프로 이상 올랐던 코인이라면 거래대상 제외
+                if df_day["close"][-3] / (df_close_total / 5) >= 1.1 or df_day["close"][-2] / (df_close_total / 5) >= 1.1:
+                    continue
                 # 구매대상 있는지 검사 로직
                 check_result = dict(filter(lambda el: el[1] is True, methods.check_purchase_target(target_coin, "minute5").items()))
                 purchase_level = len(check_result)

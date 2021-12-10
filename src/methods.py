@@ -439,13 +439,13 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
     delay_for_normal_api()
     # 조건1 현재 코인가격 * 보유 코인 수 / 투자예산 > 0.5 인가
     is_volume_passed = now_price * my_coin_cnt / invest_balance > 0.5
+    # 조건1-2 현재 코인가격 * 보유 코인 수 / 투자예산 > 0.65 인가
+    is_volume_passed2 = now_price * my_coin_cnt / invest_balance > 0.65
     # 내 코인의 평균 객단가(업비트 표기)
     upbit_avg_buy_price = check_my_upbit_avg_price(upbit, target_coin)
     # 조건2 나의 업비트 평단가보다 현재가가 높아지는 순간
     is_grow_then_upbit_avg = now_price >= upbit_avg_buy_price
     delay_for_normal_api()
-    # 실제 평단가
-    real_avg = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
 
     # 직전 볼린저밴드와 지금 볼린저밴드를 구해온다
     df = pyupbit.get_ohlcv(target_coin, interval)
@@ -458,24 +458,20 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
     # 조건3 볼린저밴드가 미들라인 아래에 있다가 미들라인에 도달한 경우
     is_bb_grow_passed = float(bb_before["ma"]) - before_price > 0 and float(bb_now["ma"]) - now_price  < 0
 
-    #  조건1을 충족
-    if is_volume_passed:
-        # 조건2 충족
-        if is_grow_then_upbit_avg:
-            # 보유 수량의 50퍼센트를 판매한다
-            upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.5)
-            log_print("순환매 업비트 평단 기준 익절 실행: " + str(target_coin) + " 코인을 50% 판매했습니다.")
-            delay_for_deal_api()
-            return True
-        # 조건3 충족
-        elif is_bb_grow_passed:
-            # 보유 수량의 25퍼센트를 판매한다
-            upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.25)
-            log_print("순환매 볼린저밴드 기준 익절 실행: " + str(target_coin) + " 코인을 25% 판매했습니다.")
-            delay_for_deal_api()
-            return True
-        else:
-            return False
+    #  조건1과 2를 충족
+    if is_volume_passed and is_grow_then_upbit_avg:
+        # 보유 수량의 50퍼센트를 판매한다
+        upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.5)
+        log_print("순환매 업비트 평단 기준 익절 실행: " + str(target_coin) + " 코인을 50% 판매했습니다.")
+        delay_for_deal_api()
+        return True
+    # 조건1-2와 3을 충족
+    elif is_volume_passed2 and is_bb_grow_passed:
+        # 보유 수량의 25퍼센트를 판매한다
+        upbit.sell_market_order(target_coin, float(upbit.get_balance(target_coin)) * 0.25)
+        log_print("순환매 볼린저밴드 기준 익절 실행: " + str(target_coin) + " 코인을 25% 판매했습니다.")
+        delay_for_deal_api()
+        return True
     # 익절 대상이 아니라면
     else:
         # 추가로 매수할 자금은 남아있는지 체크

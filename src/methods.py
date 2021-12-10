@@ -424,7 +424,7 @@ def check_cycle_mode(upbit, target_coin, invest_balance, except_balance):
     real_avg = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
 
     # 실제 평단가와 업비트 평단가가 3퍼센트 이상 차이나면 순환매도매수라고 정의한다
-    if real_avg >= upbit_avg * 1.03:
+    if real_avg >= upbit_avg * 1.02:
         return True
     else:
         return False

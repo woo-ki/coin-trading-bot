@@ -52,7 +52,10 @@ while True:
             }
             balances["KRW-" + balance["currency"]] = temp
         for target_coin in target_coins:
-            invest_balance += int(float(balances[target_coin]["balance"]) * float(balances[target_coin]["avg_buy_price"]))
+            methods.delay_for_normal_api()
+            target_info = upbit.get_chance(target_coin)     # 투자 코인 시장정보
+            buy_fees = float(target_info["bid_fee"])        # 투자 코인 매수 수수료
+            invest_balance += int(float(balances[target_coin]["balance"]) * float(balances[target_coin]["avg_buy_price"]) * (1 + buy_fees))
         # 매도신호 on
         sell_sign = True
     # 보유 코인이 없는경우

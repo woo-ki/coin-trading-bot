@@ -20,7 +20,7 @@ def delay_for_normal_api():
 
 # 거래 api 호출 시간지연 메소드
 def delay_for_deal_api():
-    time.sleep(3)
+    time.sleep(10)
 
 
 # 거래대금이 많은 순으로 코인 리스트를 얻는다.

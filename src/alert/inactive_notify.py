@@ -12,7 +12,7 @@ try:
             'Authorization': 'Bearer ' + TOKEN
         },
         data={
-            'message': "코인봇이 멈췄습니다. 재가동이 필요합니다."
+            'message': "코인봇이 멈췄습니다. 재가동 진행합니다."
         }
     )
 

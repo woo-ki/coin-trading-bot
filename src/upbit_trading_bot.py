@@ -118,6 +118,14 @@ while True:
                 # 만약 어제 또는 이틀전에 5일 평균보다 10프로 이상 올랐던 코인이라면 거래대상 제외
                 if df_day["close"][-3] / (df_close_total / 5) >= 1.1 or df_day["close"][-2] / (df_close_total / 5) >= 1.1:
                     continue
+                # rsi14가 75이상인 종목은 제외
+                # 일봉 분봉 정보를 불러온다.
+                df_5 = pyupbit.get_ohlcv(target_coin, "minute5")
+                # rsi 수치를 계산한다
+                now_rsi14 = methods.get_rsi(df_5, 14, -1)
+                if now_rsi14 >= 75:
+                    continue
+                methods.delay_for_normal_api()
                 # 구매대상 있는지 검사 로직
                 check_result = dict(filter(lambda el: el[1] is True, methods.check_purchase_target(target_coin, "minute5").items()))
                 purchase_level = len(check_result)

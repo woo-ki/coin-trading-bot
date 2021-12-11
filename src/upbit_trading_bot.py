@@ -10,6 +10,8 @@ secret = "BNwix0tO4IPIn4GzWcxqVnRxVxItxJPh4sm3DYj5"  # 본인 값으로 변경
 upbit = pyupbit.Upbit(access, secret)
 methods.log_print("Upbit Auto Trading Bot 가동")
 
+time.sleep(9999)
+
 while True:
     # methods.log_print("투자 봇 가동")
     # 내 원화 잔고를 가져온다

@@ -115,11 +115,15 @@ while True:
                 # 최근 급등한 코인인지 체크
                 df_day = pyupbit.get_ohlcv(target_coin, "day")
                 methods.delay_for_normal_api()
-                df_close_total = 0.0
-                for i in range(-1, -6, -1):
-                    df_close_total += df_day["close"][i]
-                # 만약 어제 또는 이틀전에 5일 평균보다 10프로 이상 올랐던 코인이라면 거래대상 제외
-                if df_day["close"][-3] / (df_close_total / 5) >= 1.1 or df_day["close"][-2] / (df_close_total / 5) >= 1.1:
+                try:
+                    df_close_total = 0.0
+                    for i in range(-1, -6, -1):
+                        df_close_total += df_day["close"][i]
+                    # 만약 어제 또는 이틀전에 5일 평균보다 10프로 이상 올랐던 코인이라면 거래대상 제외
+                    if df_day["close"][-3] / (df_close_total / 5) >= 1.1 or df_day["close"][-2] / (df_close_total / 5) >= 1.1:
+                        continue
+                except Exception as e:
+                    methods.log_print(e)
                     continue
                 # rsi14가 75이상인 종목은 제외
                 # 일봉 분봉 정보를 불러온다.

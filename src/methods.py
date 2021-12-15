@@ -20,7 +20,7 @@ def delay_for_normal_api():
 
 # 거래 api 호출 시간지연 메소드
 def delay_for_deal_api():
-    time.sleep(3)
+    time.sleep(10)
 
 
 # 거래대금이 많은 순으로 코인 리스트를 얻는다.
@@ -237,10 +237,15 @@ def sell_logic(upbit, target_coin, invest_balance, except_balance, custom_revenu
 
     real_avg_buy_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
 
-    # 목표 가격을 정하고 목표 가격보다 현재 가격이 높은경우 매도한다.
+    # 목표 가격을 정하고 목표 가격보다 현재 가격이 높고, 코인의 매도세가 시작된 경우 매도한다.
     target_price = real_avg_buy_price * target_revenue
     now_price = pyupbit.get_current_price(target_coin)
-    if now_price >= target_price:
+    # 1분봉 기준 rsi지표 생성
+    df_1 = pyupbit.get_ohlcv(target_coin, "minute1")
+    before_rsi_1 = get_rsi(df_1, 14, -1)
+    now_rsi_1 = get_rsi(df_1, 14, -2)
+    is_rsi_1_degradation = before_rsi_1 / now_rsi_1 < 0.97
+    if now_price >= target_price and is_rsi_1_degradation:
         upbit.sell_market_order(target_coin, upbit.get_balance(target_coin))
         log_print(str(target_coin) + " 코인을 모두 판매했습니다.")
         delay_for_deal_api()
@@ -436,27 +441,33 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
     now_price = pyupbit.get_current_price(target_coin)
     delay_for_normal_api()
     my_coin_cnt = float(upbit.get_balance(target_coin))
+    # 내 코인의 평균 객단가(업비트 표기)
+    upbit_avg_buy_price = check_my_upbit_avg_price(upbit, target_coin)
+    # 직전 볼린저밴드와 지금 볼린저밴드를 구해온다
+    df = pyupbit.get_ohlcv(target_coin, interval)
     delay_for_normal_api()
+    bb_before = get_bb(df, 20, -2)
+    bb_now = get_bb(df, 20, -1)
+    # 직전 코인 종가를 구해온다
+    before_price = df["close"][-1]
+    # 1분봉 기준 rsi지표 생성
+    df_1 = pyupbit.get_ohlcv(target_coin, "minute1")
+    before_rsi_1 = get_rsi(df_1, 14, -1)
+    now_rsi_1 = get_rsi(df_1, 14, -2)
+    is_rsi_1_degradation = before_rsi_1 / now_rsi_1 < 0.95
+
     # 조건1 현재 코인가격 * 보유 코인 수 / 투자예산 > 0.5 인가
     is_volume_passed = now_price * my_coin_cnt / invest_balance > 0.5
     # 조건1-2 현재 코인가격 * 보유 코인 수 / 투자예산 > 0.65 인가
     is_volume_passed2 = now_price * my_coin_cnt / invest_balance > 0.65
-    # 내 코인의 평균 객단가(업비트 표기)
-    upbit_avg_buy_price = check_my_upbit_avg_price(upbit, target_coin)
-    # 조건2 나의 업비트 평단가보다 현재가가 높아지는 순간
-    is_grow_then_upbit_avg = now_price >= upbit_avg_buy_price
-    delay_for_normal_api()
-
-    # 직전 볼린저밴드와 지금 볼린저밴드를 구해온다
-    df = pyupbit.get_ohlcv(target_coin, interval)
-    bb_before = get_bb(df, 20, -2)
-    bb_now = get_bb(df, 20, -1)
-
-    # 직전 코인 종가를 구해온다
-    before_price = df["close"][-1]
-
+    # 조건2 나의 업비트 평단가보다 현재가가 높아지는 순간(직전에는 도달하지 못했다가 지금 도달한 경우)
+    # rsi 1분봉을 기점으로 하락이 시작되는 타이밍
+    is_grow_then_upbit_avg = before_price < upbit_avg_buy_price <= now_price and is_rsi_1_degradation
     # 조건3 볼린저밴드가 미들라인 아래에 있다가 미들라인에 도달한 경우
-    is_bb_grow_passed = float(bb_before["ma"]) - before_price > 0 and float(bb_now["ma"]) - now_price  < 0
+    # rsi 1분봉을 기점으로 하락이 시작되는 타이밍
+    bb_grow1 = float(bb_before["ma"]) - before_price > 0
+    bb_grow2 = float(bb_now["ma"]) - now_price < 0
+    is_bb_grow_passed = bb_grow1 and bb_grow2 and is_rsi_1_degradation
 
     #  조건1과 2를 충족
     if is_volume_passed and is_grow_then_upbit_avg:
@@ -472,8 +483,8 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
         log_print("순환매 볼린저밴드 기준 익절 실행: " + str(target_coin) + " 코인을 25% 판매했습니다.")
         delay_for_deal_api()
         return True
-    # 익절 대상이 아니라면
-    else:
+    # 비중이 50프로가 안되면
+    elif not is_volume_passed:
         # 추가로 매수할 자금은 남아있는지 체크
         now_balance = int(upbit.get_balance("KRW")) - except_balance      # 현재 잔고
         target_info = upbit.get_chance(target_coin)                       # 투자 코인 시장정보
@@ -491,6 +502,10 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
         else:
             # 매수위해 순환매 익절로직 종료
             return False
+    # 비중이 50%는 넘었지만 다른 조건이 안된다면
+    else:
+        # 그냥 다음로직 실행
+        return False
 
 
 # 매수로직

@@ -106,6 +106,9 @@ while True:
         else:
             # 거래 대상들을 돌면서 구매할만한 코인이 있는지 확인한다.
             for target_coin in target_coins:
+                # 도지코인이면 제외
+                if target_coin == "KRW-DOGE":
+                    continue
                 # 최근 급등한 코인인지 체크
                 df_day = pyupbit.get_ohlcv(target_coin, "day")
                 methods.delay_for_normal_api()

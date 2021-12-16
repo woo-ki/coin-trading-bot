@@ -241,7 +241,11 @@ def sell_logic(upbit, target_coin, invest_balance, except_balance, custom_revenu
     target_price = real_avg_buy_price * target_revenue
     now_price = pyupbit.get_current_price(target_coin)
     # 1분봉 기준 rsi지표 생성
-    df_1 = pyupbit.get_ohlcv(target_coin, "minute1")
+    try:
+        df_1 = pyupbit.get_ohlcv(target_coin, "minute1")
+    except Exception as e:
+        log_print(e)
+        sell_logic(upbit, target_coin, invest_balance, except_balance, custom_revenue)
     before_rsi_1 = get_rsi(df_1, 14, -1)
     now_rsi_1 = get_rsi(df_1, 14, -2)
     is_rsi_1_degradation = before_rsi_1 / now_rsi_1 < 0.97

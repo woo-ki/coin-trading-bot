@@ -592,6 +592,8 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
         # 코인 거래를 시작한지 2시간이 경과했고, 매수중지 상태인 경우 진입
         if buy_logic_start - time.time() >= 60 * 60 * 2 and stop_buy:
             stop_loss_result = stop_loss_logic(upbit, target_coin, invest_balance, except_balance, 0.99)
+        else:
+            stop_loss_result = False
 
         # 손절한 경우
         if stop_loss_result:

@@ -382,19 +382,18 @@ def buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_re
         delay_for_deal_api()
         return True
     else:
-        # 리얼객단가 가져오기
-        real_avg_buy_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
-        # 현재 코인 가격 가져오기
-        now_coin_price = pyupbit.get_current_price(target_coin)
-        delay_for_normal_api()
-
-        # 현재 코인 가격이 실제 객단가보다 1% 이상 낮은경우
-        if (real_avg_buy_price - now_coin_price) / real_avg_buy_price > 0.01:
-            # 보유 코인의 25% 손절
-            upbit.sell_market_order(target_coin, upbit.get_balance(target_coin) * 0.25)
-            log_print(str(target_coin) + " 코인을 25% 손절했습니다")
-            delay_for_deal_api()
-
+        #     # 리얼객단가 가져오기
+        #     real_avg_buy_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
+        #     # 현재 코인 가격 가져오기
+        #     now_coin_price = pyupbit.get_current_price(target_coin)
+        #     delay_for_normal_api()
+        #
+        #     # 현재 코인 가격이 실제 객단가보다 1% 이상 낮은경우
+        #     if (real_avg_buy_price - now_coin_price) / real_avg_buy_price > 0.01:
+        #         # 보유 코인의 25% 손절
+        #         upbit.sell_market_order(target_coin, upbit.get_balance(target_coin) * 0.25)
+        #         log_print(str(target_coin) + " 코인을 25% 손절했습니다")
+        #         delay_for_deal_api()
         return False
 
 
@@ -512,6 +511,43 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
         return False
 
 
+# 손절로직
+# upbit : 로그인 된 업비트 객체
+# target_coin : 매도할 코인 티커
+# invest_balance : 투자 원금
+# except_balance : 투자예외 지정금
+# stop_loss_point : 손절 비율
+def stop_loss_logic(upbit, target_coin, invest_balance, except_balance, stop_loss_point):
+    # 시장상황 분석
+    market_status = check_market_status(target_coin)
+
+    real_avg_buy_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance)
+
+    # 조건1. 손절가보다 현재가가 낮다.
+    # 조건2. 코인이 하락장이다
+    # 조건3. 여전히 매도세가 진행중이다.
+    target_price = real_avg_buy_price * stop_loss_point
+    now_price = pyupbit.get_current_price(target_coin)
+    # 1분봉 기준 rsi지표 생성
+    try:
+        df_1 = pyupbit.get_ohlcv(target_coin, "minute1")
+    except Exception as e:
+        log_print(e)
+        stop_loss_logic(upbit, target_coin, invest_balance, except_balance, stop_loss_point)
+    before_rsi_1 = get_rsi(df_1, 14, -1)
+    now_rsi_1 = get_rsi(df_1, 14, -2)
+    is_rsi_1_degradation = before_rsi_1 / now_rsi_1 < 0.97
+    if now_price < target_price and is_rsi_1_degradation and market_status == "하락장":
+        upbit.sell_market_order(target_coin, upbit.get_balance(target_coin))
+        log_print(str(target_coin) + " 코인을 모두 손절했습니다.")
+        delay_for_deal_api()
+        return True
+    else:
+        # log_print("수익률에 도달하지 못했습니다.")
+        delay_for_normal_api()
+        return False
+
+
 # 매수로직
 # upbit : 로그인 된 업비트 객체
 # target_coin : 대상 코인 티커
@@ -521,6 +557,8 @@ def good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except
 # init_purchase : 진입과 동시에 코인을 구매할지 여부
 # check_result : init_purchase가 True인 경우 어떤 체크값들이 True인지 담고있는 딕셔너리
 def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init_purchase=False, check_result=""):
+    # 잔고부족으로 매수를 멈춰야 하는 경우
+    stop_buy = False
     # 매수 로직 최초 진입시간을 체크한다.
     buy_logic_start = time.time()
     # 매수 시간텀 메모를 위해 buy_time 변수를 선언한다
@@ -550,45 +588,62 @@ def buy_logic(upbit, target_coin, interval, invest_balance, except_balance, init
             # 매수로직을 종료한다
             break
 
-        # 순환매수매도 모드에 진입했는지 체크한다.
-        is_cycle_mode = check_cycle_mode(upbit, target_coin, invest_balance, except_balance)
+        # 손절 로직
+        # 코인 거래를 시작한지 2시간이 경과했고, 매수중지 상태인 경우 진입
+        if buy_logic_start - time.time() >= 60 * 60 * 2 and stop_buy:
+            stop_loss_result = stop_loss_logic(upbit, target_coin, invest_balance, except_balance, 0.99)
 
-        # 순환매 모드에 진입했다면
-        if is_cycle_mode:
-            # 순환매 진행
-            good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except_balance)
+        # 손절한 경우
+        if stop_loss_result:
+            # 매수 로직을 종료한다
+            break
 
-        # 매수 대상인지 체크에 필요한 변수 선언 및 값 지정
-        check_result = dict(filter(lambda el: el[1] is True, check_purchase_target(target_coin, interval).items()))
-        purchase_level = len(check_result)
-        buy_sign = False
-        if purchase_level == 4:
-            buy_minute = 3
-        elif purchase_level == 3:
-            buy_minute = 6
-        else:
-            buy_minute = 9
-        buy_term = 60 * buy_minute
+        # # 순환매수매도 모드에 진입했는지 체크한다.
+        # is_cycle_mode = check_cycle_mode(upbit, target_coin, invest_balance, except_balance)
+        #
+        # # 순환매 모드에 진입했다면
+        # if is_cycle_mode:
+        #     # 순환매 진행
+        #     good_sell_at_cycle_mode(upbit, target_coin, interval, invest_balance, except_balance)
 
-        # 매수 신호가 2개이상 충족하는가
-        if purchase_level >= 2:
-            # 수익율이 0.2% 미만이 맞는가 0.2프로 미만인 경우에만 매수진행
-            target_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance) * 1.002
-            now_price = pyupbit.get_current_price(target_coin)
-            delay_for_normal_api()
-            if now_price < target_price:
-                # 구매한 이력이 없는가
-                if buy_time == "":
-                    buy_sign = True
-                # 구매까지의 충분한 시간이 경과했는가
-                elif time.time() - buy_time >= buy_term:
-                    buy_sign = True
+        # 구매중지가 안된 경우에만 매수 로직을 체크한다.
+        # 구매중지는 잔고가 없는경우에만 Ture가 된다.
+        if not stop_buy:
+            # 매수 대상인지 체크에 필요한 변수 선언 및 값 지정
+            check_result = dict(filter(lambda el: el[1] is True, check_purchase_target(target_coin, interval).items()))
+            purchase_level = len(check_result)
+            buy_sign = False
+            if purchase_level == 4:
+                buy_minute = 2
+            elif purchase_level == 3:
+                buy_minute = 5
+            else:
+                buy_minute = 7
+            buy_term = 60 * buy_minute
 
-        # 매수 신호가 전달되는 경우
-        if buy_sign:
-            # 대상 코인을 바로 시장가 매수한다.
-            buy_result = buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
-            # 정상적으로 구매를 한경우
-            if buy_result:
-                # 코인 구매 시간을 저장한다
-                buy_time = time.time()
+            # 매수 신호가 2개이상 충족하는가
+            if purchase_level >= 2:
+                # 수익율이 0.2% 미만이 맞는가 0.2프로 미만인 경우에만 매수진행
+                target_price = get_real_avg_buy_price(upbit, target_coin, invest_balance, except_balance) * 1.002
+                now_price = pyupbit.get_current_price(target_coin)
+                delay_for_normal_api()
+                if now_price < target_price:
+                    # 구매한 이력이 없는가
+                    if buy_time == "":
+                        buy_sign = True
+                    # 구매까지의 충분한 시간이 경과했는가
+                    elif time.time() - buy_time >= buy_term:
+                        buy_sign = True
+
+            # 매수 신호가 전달되는 경우
+            if buy_sign:
+                # 대상 코인을 바로 시장가 매수한다.
+                buy_result = buy_target_coin(upbit, target_coin, invest_balance, except_balance, check_result)
+                # 정상적으로 구매를 한경우
+                if buy_result:
+                    # 코인 구매 시간을 저장한다
+                    buy_time = time.time()
+                    stop_buy = False
+                else:
+                    log_print("잔고가 모두 소진되어 매수는 중지합니다.")
+                    stop_buy = True
